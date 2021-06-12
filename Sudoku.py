@@ -64,7 +64,7 @@ class Board:
         else:
             row, col = moves
 
-        # Try every num
+        # Try every valid num
         for attempt in range(1, 10):
             if self.valid(attempt, row, col):
                 self.board[row][col] = attempt
@@ -72,13 +72,14 @@ class Board:
                 if self.solve():
                     return True
 
-                # If we get here, it means the move we chose did not work
+                # If we get here, it means the number we chose did not work
                 self.board[row][col] = 0
 
         return False
 
 
-testBoard = [
+if __name__ == "__main__":
+    testBoard = [
             [0,0,0,2,6,0,7,0,1],
             [6,8,0,0,7,0,0,9,0],
             [1,9,0,0,0,4,5,0,0],
@@ -90,7 +91,7 @@ testBoard = [
             [7,0,3,0,1,8,0,0,0],
             ]
 
-game = Board(testBoard)
-game.printBoard()
-game.solve()
-game.printBoard()
+    game = Board(testBoard)
+    game.printBoard()
+    game.solve()
+    game.printBoard()
