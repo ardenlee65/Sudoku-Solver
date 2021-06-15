@@ -117,10 +117,11 @@ def drawOutlines(screen):
     pygame.draw.line(screen, (0,0,0),(370, 140), (370, 500),1)
 
 
-def printBoard(screen, font, currentBoard):
+def printBoard(screen, font, guessFont, currentBoard, guessBoard):
     # Prints numbers onto the Sudoku board
 
     # 162 because 160 makes it too high up, probably due to line thickness...
+    # Prints currentBoard
     center = (30, 162)
     for row in range(9):
         for col in range(9):
@@ -133,6 +134,18 @@ def printBoard(screen, font, currentBoard):
                 screen.blit(text, textRect)
         center = (30, center[1] + 40)
 
+    # Prints guessBoard
+    center = (20, 152)
+    for row in range(9):
+        for col in range(9):
+            num = guessBoard[row][col]
+            center = (center[0] + 40, center[1])
+            if num != 0:
+                text = smallFont.render(str(num), True, (0,0,0), (224,224,224))
+                textRect = text.get_rect()
+                textRect.center = center
+                screen.blit(text, textRect)
+        center = (20, center[1] + 40)  
 
 def onBoard(pos):
     # Checks if cursor click is on the board
@@ -141,6 +154,14 @@ def onBoard(pos):
     if (50 <= X <= 410) and (140 <= Y <= 500):
         return True
     return False
+
+def gameFinished(board):
+    length = len(board)
+    for row in range(length):
+        for col in range(length):
+            if board[row][col] == 0:
+                return False
+    return True
 
 if __name__ == "__main__":
     # Find answer to board
@@ -155,8 +176,21 @@ if __name__ == "__main__":
             [0,4,0,0,5,0,0,3,6],
             [7,0,3,0,1,8,0,0,0],
             ]
+    # startBoard = [
+    #     [4,3,5,2,6,9,7,8,1],
+    #     [6,8,2,5,7,1,4,9,3],
+    #     [1,9,7,8,3,4,5,6,2],
+    #     [8,2,6,1,9,5,3,4,7],
+    #     [3,7,4,6,8,2,9,1,5],
+    #     [9,5,1,7,4,3,6,2,8],
+    #     [5,1,9,3,2,6,8,7,4],
+    #     [2,4,8,9,5,7,1,3,6],
+    #     [7,6,3,4,1,8,2,5,0],
+    # ]
     # Create a deep copy of original board
-    currentBoard = [row[:] for row in startBoard]
+    currentBoard = [row[:] for row in startBoard]\
+    # Initializes empty 2D array, used to store user guesses
+    guessBoard = [[0 for col in range(9)] for row in range(9)]
     game = Board(startBoard)
     game.solve()
     answerBoard = game.board
@@ -166,34 +200,111 @@ if __name__ == "__main__":
     icon = pygame.image.load('sudoku-svgrepo-com.svg')
     pygame.display.set_icon(icon)
     pygame.display.set_caption("Sudoku")
+    redBox = False
 
-    font = pygame.font.SysFont('monospace',30)
+    # TODO: Check for valid use of these variables
+    # Used to draw highlighted box, represent coordinates
+    RedX = -1
+    RedY = -1
+
+    # Represent selected box, indexes for currentBoard
+    SelectedX = -1
+    SelectedY = -1
+
+    # font used for currentBoard numbers, smallFont used for guesses
+    font = pygame.font.SysFont('monospace',30, bold=True)
+    smallFont = pygame.font.SysFont('monospace', 15)
+
+    winFont = pygame.font.SysFont("monospace", 64, bold=True)
 
     run = True
+    win = False
     while run:
         screen.fill((224,224,224))
-        # Check if game is over here
+        printBoard(screen, font, smallFont, currentBoard, guessBoard)
+        # Rectangle begins on 50, 140
+        drawOutlines(screen)
+
+        if redBox:
+            pygame.draw.rect(screen, (255,0,0), pygame.Rect(RedX, RedY, 40, 40), 3)
+
+        # TODO: Check if game is over
+        if gameFinished(currentBoard):
+            win = True
+            winFont = pygame.font.SysFont("monospace", 40, bold=True)
+            text = winFont.render('Congrats! You win!', True, (0,0,0), (224,224,224))
+            textRect = text.get_rect()
+            textRect.center = (240, 70)
+            screen.blit(text, textRect)
+
         for event in pygame.event.get():
 
             # Closing Window
             if event.type == pygame.QUIT:
                 run = False
 
-            # Clicking on Box
-            if event.type == pygame.MOUSEBUTTONUP:
-                # Pos is a tuple, (X,Y)
-                pos = pygame.mouse.get_pos()
-                if onBoard(pos):
-                    X = pos[0] - 40
-                    Y = pos[1] - 140
-                    XBox = X // 40
-                    YBox = Y // 40
-                    print(currentBoard[YBox][XBox])
-                else:
-                    print("Out!")
-        
-        printBoard(screen, font, currentBoard)
-        # Rectangle begins on 50, 140
-        drawOutlines(screen)
+            if not win:
+                # Inputting a number or entering
+                if event.type == pygame.KEYDOWN:
+                    # This means if no box has been selected yet
+                    if not redBox:
+                        continue
+
+                    # Set the value for the guess to the guessBoard
+                    if event.key == pygame.K_1:
+                        guessBoard[SelectedY][SelectedX] = 1
+                    if event.key == pygame.K_2:
+                        guessBoard[SelectedY][SelectedX] = 2                    
+                    if event.key == pygame.K_3:
+                        guessBoard[SelectedY][SelectedX] = 3
+                    if event.key == pygame.K_4:
+                        guessBoard[SelectedY][SelectedX] = 4
+                    if event.key == pygame.K_5:
+                        guessBoard[SelectedY][SelectedX] = 5
+                    if event.key == pygame.K_6:
+                        guessBoard[SelectedY][SelectedX] = 6
+                    if event.key == pygame.K_7:
+                        guessBoard[SelectedY][SelectedX] = 7
+                    if event.key == pygame.K_8:
+                        guessBoard[SelectedY][SelectedX] = 8
+                    if event.key == pygame.K_9:
+                        guessBoard[SelectedY][SelectedX] = 9
+                    # Used to reset the guess
+                    if event.key == pygame.K_0:
+                        guessBoard[SelectedY][SelectedX] = 0
+
+                    # Locking in answer
+                    if event.key == pygame.K_RETURN:
+                        # Check if guess exists
+                        if guessBoard[SelectedY][SelectedX] == 0:
+                            continue
+                        elif guessBoard[SelectedY][SelectedX] == answerBoard[SelectedY][SelectedX]:
+                            currentBoard[SelectedY][SelectedX] = guessBoard[SelectedY][SelectedX]
+                            guessBoard[SelectedY][SelectedX] = 0
+                        # User got the answer wrong
+                        else:
+                            guessBoard[SelectedY][SelectedX] = 0
+                            print("Wrong!")
+
+                # Clicking on Box
+                if event.type == pygame.MOUSEBUTTONUP:
+                    # Pos is a tuple, (X,Y)
+                    pos = pygame.mouse.get_pos()
+                    if onBoard(pos):
+
+                        X = pos[0] - 50
+                        Y = pos[1] - 140
+                        XBox = X // 40
+                        YBox = Y // 40
+
+                        # If the spot has a number, you can't highlight it
+                        if currentBoard[YBox][XBox] != 0:
+                            continue
+
+                        SelectedX = XBox
+                        SelectedY = YBox
+                        redBox = True
+                        RedX = XBox * 40 + 50
+                        RedY = YBox * 40 + 140
         pygame.display.update()
 
