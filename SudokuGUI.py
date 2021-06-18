@@ -117,7 +117,7 @@ def drawOutlines(screen):
     pygame.draw.line(screen, (0,0,0),(370, 140), (370, 500),1)
 
 
-def printBoard(screen, font, guessFont, currentBoard, guessBoard):
+def printBoard(screen, font, guessFont, currentBoard, guessBoard, title, win, lose):
     # Prints numbers onto the Sudoku board
 
     # 162 because 160 makes it too high up, probably due to line thickness...
@@ -145,7 +145,14 @@ def printBoard(screen, font, guessFont, currentBoard, guessBoard):
                 textRect = text.get_rect()
                 textRect.center = center
                 screen.blit(text, textRect)
-        center = (20, center[1] + 40)  
+        center = (20, center[1] + 40)
+
+    # Prints title "Sudoku"
+    if not win and not lose:
+        text = title.render("Sudoku", True, (0,0,0), (224,224,224))
+        textRect = text.get_rect()
+        textRect.center = (230, 50)
+        screen.blit(text, textRect)
 
 def onBoard(pos):
     # Checks if cursor click is on the board
@@ -163,30 +170,52 @@ def gameFinished(board):
                 return False
     return True
 
+def drawLives(screen, numLives):
+    life = pygame.image.load('like.png')
+    life = pygame.transform.scale(life, (30,30))
+    lifeText = pygame.font.SysFont('monospace', 30)
+    text = lifeText.render("Lives: ", True, (0,0,0), (224,224,224))
+    textRect = text.get_rect()
+    textRect.center = (65,585)
+    screen.blit(text, textRect)
+
+    screen.blit(life, (110, 570))
+    screen.blit(life, (140, 570))
+    screen.blit(life, (170, 570))
+
+    numCrosses = 3 - numLives
+    start = (170, 598)
+    for _ in range(numCrosses):
+        pygame.draw.line(screen, (255,0,0), start, (start[0]+30, start[1]-30), 3)
+        start = (start[0]-30, start[1])
+
+
+
 if __name__ == "__main__":
     # Find answer to board
-    startBoard = [
-            [0,0,0,2,6,0,7,0,1],
-            [6,8,0,0,7,0,0,9,0],
-            [1,9,0,0,0,4,5,0,0],
-            [8,2,0,1,0,0,0,4,0],
-            [0,0,4,6,0,2,9,0,0],
-            [0,5,0,0,0,3,0,2,8],
-            [0,0,9,3,0,0,0,7,4],
-            [0,4,0,0,5,0,0,3,6],
-            [7,0,3,0,1,8,0,0,0],
-            ]
     # startBoard = [
-    #     [4,3,5,2,6,9,7,8,1],
-    #     [6,8,2,5,7,1,4,9,3],
-    #     [1,9,7,8,3,4,5,6,2],
-    #     [8,2,6,1,9,5,3,4,7],
-    #     [3,7,4,6,8,2,9,1,5],
-    #     [9,5,1,7,4,3,6,2,8],
-    #     [5,1,9,3,2,6,8,7,4],
-    #     [2,4,8,9,5,7,1,3,6],
-    #     [7,6,3,4,1,8,2,5,0],
-    # ]
+    #         [0,0,0,2,6,0,7,0,1],
+    #         [6,8,0,0,7,0,0,9,0],
+    #         [1,9,0,0,0,4,5,0,0],
+    #         [8,2,0,1,0,0,0,4,0],
+    #         [0,0,4,6,0,2,9,0,0],
+    #         [0,5,0,0,0,3,0,2,8],
+    #         [0,0,9,3,0,0,0,7,4],
+    #         [0,4,0,0,5,0,0,3,6],
+    #         [7,0,3,0,1,8,0,0,0],
+    #         ]
+    startBoard = [
+        [4,3,5,2,6,9,7,8,1],
+        [6,8,2,5,7,1,4,9,3],
+        [1,9,7,8,3,4,5,6,2],
+        [8,2,6,1,9,5,3,4,7],
+        [3,7,4,6,8,2,9,1,5],
+        [9,5,1,7,4,3,6,2,8],
+        [5,1,9,3,2,6,8,7,4],
+        [2,4,8,9,5,7,1,3,6],
+        [7,6,3,4,1,8,2,5,0],
+    ]
+    
     # Create a deep copy of original board
     currentBoard = [row[:] for row in startBoard]\
     # Initializes empty 2D array, used to store user guesses
@@ -202,7 +231,6 @@ if __name__ == "__main__":
     pygame.display.set_caption("Sudoku")
     redBox = False
 
-    # TODO: Check for valid use of these variables
     # Used to draw highlighted box, represent coordinates
     RedX = -1
     RedY = -1
@@ -211,28 +239,47 @@ if __name__ == "__main__":
     SelectedX = -1
     SelectedY = -1
 
-    # font used for currentBoard numbers, smallFont used for guesses
+    # Used to keep track of the number of lives
+    numLives = 3
+
+    # font used for currentBoard numbers, smallFont used for guesses, title used to display "Sudoku"
     font = pygame.font.SysFont('monospace',30, bold=True)
     smallFont = pygame.font.SysFont('monospace', 15)
-
-    winFont = pygame.font.SysFont("monospace", 64, bold=True)
+    title = pygame.font.SysFont('monospace', 70, bold=True)
 
     run = True
     win = False
+    wrong = False
+    lose = False
     while run:
         screen.fill((224,224,224))
-        printBoard(screen, font, smallFont, currentBoard, guessBoard)
+        printBoard(screen, font, smallFont, currentBoard, guessBoard, title, win, lose)
         # Rectangle begins on 50, 140
         drawOutlines(screen)
+        drawLives(screen, numLives)
 
         if redBox:
             pygame.draw.rect(screen, (255,0,0), pygame.Rect(RedX, RedY, 40, 40), 3)
 
-        # TODO: Check if game is over
         if gameFinished(currentBoard):
             win = True
             winFont = pygame.font.SysFont("monospace", 40, bold=True)
             text = winFont.render('Congrats! You win!', True, (0,0,0), (224,224,224))
+            textRect = text.get_rect()
+            textRect.center = (240, 70)
+            screen.blit(text, textRect)
+
+        if wrong and not lose:
+            wrongFont = pygame.font.SysFont('monospace', 30, italic = True)
+            text = wrongFont.render("Wrong! Try again.", True, (0,0,0), (224,224,224))
+            textRect = text.get_rect()
+            textRect.center = (230, 110)
+            screen.blit(text, textRect)
+
+        if numLives == 0:
+            lose = True
+            loseFont = pygame.font.SysFont("monospace", 40, bold=True)
+            text = loseFont.render('Game over!', True, (0,0,0), (224,224,224))
             textRect = text.get_rect()
             textRect.center = (240, 70)
             screen.blit(text, textRect)
@@ -243,7 +290,7 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 run = False
 
-            if not win:
+            if not win and not lose:
                 # Inputting a number or entering
                 if event.type == pygame.KEYDOWN:
                     # This means if no box has been selected yet
@@ -278,13 +325,17 @@ if __name__ == "__main__":
                         # Check if guess exists
                         if guessBoard[SelectedY][SelectedX] == 0:
                             continue
+                        # User got answer correct
                         elif guessBoard[SelectedY][SelectedX] == answerBoard[SelectedY][SelectedX]:
                             currentBoard[SelectedY][SelectedX] = guessBoard[SelectedY][SelectedX]
                             guessBoard[SelectedY][SelectedX] = 0
+                            redBox = False
+                            wrong = False
                         # User got the answer wrong
                         else:
                             guessBoard[SelectedY][SelectedX] = 0
-                            print("Wrong!")
+                            wrong = True
+                            numLives -= 1
 
                 # Clicking on Box
                 if event.type == pygame.MOUSEBUTTONUP:
